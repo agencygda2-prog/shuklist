@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #CC785C;
+    --primary-light: #E8997F;
+    --primary-dark: #B05A3E;
+    --surface: #F9F5F2;
+    --success: #4CAF50;
+    --warning: #FF9800;
+    --error: #F44336;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-surface hover:bg-gray-200 text-gray-900 font-medium py-3 px-6 rounded-lg transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .card {
+    @apply bg-white border border-gray-200 rounded-lg shadow-sm p-6;
+  }
+
+  .badge-promotion {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-white;
+  }
+
+  .badge-savings {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success text-white;
+  }
+}
