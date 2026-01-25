@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import DashboardNav from '@/components/ui/DashboardNav';
-
+import DashboardNav from '@/components/ui/DashboardNav'; 
+export const dynamic = 'force-dynamic'
 export default async function DashboardLayout({
   children,
 }: {
