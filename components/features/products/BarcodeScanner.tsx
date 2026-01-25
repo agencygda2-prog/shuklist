@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { BrowserMultiFormatReader } from '@zxing/library';
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
 import { Camera, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { OpenFoodFactsResponse, Product } from '@/types';
@@ -28,36 +28,64 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
   const startScanning = async () => {
     try {
       setIsScanning(true);
-      
-      // Initialize the code reader
-      const codeReader = new BrowserMultiFormatReader();
+
+      // Initialize the code reader with hints for better detection
+      const hints = new Map();
+      const formats = [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+        BarcodeFormat.CODE_128,
+        BarcodeFormat.CODE_39,
+      ];
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+
+      const codeReader = new BrowserMultiFormatReader(hints);
       codeReaderRef.current = codeReader;
 
       // Get available video input devices
       const videoInputDevices = await codeReader.listVideoInputDevices();
-      
+
       if (videoInputDevices.length === 0) {
         throw new Error('No camera found on this device');
       }
 
-      // Use the first camera (usually back camera on mobile)
-      const selectedDeviceId = videoInputDevices[0].deviceId;
+      // Prefer back camera on mobile
+      let selectedDeviceId = videoInputDevices[0].deviceId;
+      for (const device of videoInputDevices) {
+        if (device.label.toLowerCase().includes('back') || 
+            device.label.toLowerCase().includes('rear')) {
+          selectedDeviceId = device.deviceId;
+          break;
+        }
+      }
+
+      console.log('Using camera:', videoInputDevices.find(d => d.deviceId === selectedDeviceId)?.label);
 
       // Start decoding from video device
       if (videoRef.current) {
-        codeReader.decodeFromVideoDevice(
+        await codeReader.decodeFromVideoDevice(
           selectedDeviceId,
           videoRef.current,
           async (result, error) => {
             if (result) {
               const barcode = result.getText();
-              console.log('Barcode detected:', barcode);
-              
+              console.log('✅ Barcode detected:', barcode);
+
               // Stop scanning while we fetch product data
               stopScanning();
-              
+
               // Fetch product data from Open Food Facts
               await fetchProductData(barcode);
+            }
+            
+            if (error) {
+              // Don't log "not found" errors - they're normal while scanning
+              if (error.name !== 'NotFoundException') {
+                console.error('Scanner error:', error);
+              }
             }
           }
         );
@@ -117,7 +145,7 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
     } catch (error: any) {
       console.error('Product fetch error:', error);
       toast.error('Failed to fetch product data');
-      
+
       // Still pass the barcode for manual entry
       onProductScanned({
         barcode: barcode,
@@ -131,7 +159,7 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
 
   const guessCategory = (categories: string): string => {
     const lowerCategories = categories.toLowerCase();
-    
+
     if (lowerCategories.includes('pasta') || lowerCategories.includes('rice')) {
       return 'Pasta & Rice';
     } else if (lowerCategories.includes('bread') || lowerCategories.includes('bakery')) {
@@ -155,7 +183,7 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
     } else if (lowerCategories.includes('coffee') || lowerCategories.includes('tea')) {
       return 'Coffee & Tea';
     }
-    
+
     // Default fallback
     return 'Pantry & Sauces';
   };
@@ -174,18 +202,21 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
       </div>
 
       {/* Video Feed */}
-      <div className="flex-1 relative flex items-center justify-center">
+      <div className="flex-1 relative flex items-center justify-center bg-black">
         <video
           ref={videoRef}
           className="max-w-full max-h-full"
           autoPlay
           playsInline
+          muted
         />
 
         {/* Scanning overlay */}
         {isScanning && !isFetching && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="border-4 border-primary w-64 h-48 rounded-lg"></div>
+            <div className="border-4 border-orange-500 w-72 h-40 rounded-lg shadow-lg">
+              <div className="absolute top-0 left-0 w-full h-1 bg-orange-500 animate-pulse"></div>
+            </div>
           </div>
         )}
 
@@ -203,7 +234,12 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
       {/* Instructions */}
       <div className="bg-black text-white p-4 text-center">
         <p className="text-sm text-gray-300">
-          Point your camera at a product barcode
+          {isScanning 
+            ? "Hold barcode steady in the frame" 
+            : "Initializing camera..."}
+        </p>
+        <p className="text-xs text-gray-500 mt-2">
+          Works best with good lighting
         </p>
       </div>
     </div>
