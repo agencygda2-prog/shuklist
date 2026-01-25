@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
-import { Camera, X, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { OpenFoodFactsResponse, Product } from '@/types';
 
@@ -11,11 +10,20 @@ interface BarcodeScannerProps {
   onClose: () => void;
 }
 
+// Declare BarcodeDetector type for browsers that support it
+declare global {
+  interface Window {
+    BarcodeDetector: any;
+  }
+}
+
 export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     startScanning();
@@ -29,67 +37,53 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
     try {
       setIsScanning(true);
 
-      // Initialize the code reader with hints for better detection
-      const hints = new Map();
-      const formats = [
-        BarcodeFormat.EAN_13,
-        BarcodeFormat.EAN_8,
-        BarcodeFormat.UPC_A,
-        BarcodeFormat.UPC_E,
-        BarcodeFormat.CODE_128,
-        BarcodeFormat.CODE_39,
-      ];
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-      hints.set(DecodeHintType.TRY_HARDER, true);
-
-      const codeReader = new BrowserMultiFormatReader(hints);
-      codeReaderRef.current = codeReader;
-
-      // Get available video input devices
-      const videoInputDevices = await codeReader.listVideoInputDevices();
-
-      if (videoInputDevices.length === 0) {
-        throw new Error('No camera found on this device');
+      // Check if BarcodeDetector is available
+      if (!('BarcodeDetector' in window)) {
+        console.log('BarcodeDetector not supported, using fallback');
+        setUseFallback(true);
+        toast.error('Native barcode scanning not supported. Please enter barcode manually.');
+        onClose();
+        return;
       }
 
-      // Prefer back camera on mobile
-      let selectedDeviceId = videoInputDevices[0].deviceId;
-      for (const device of videoInputDevices) {
-        if (device.label.toLowerCase().includes('back') || 
-            device.label.toLowerCase().includes('rear')) {
-          selectedDeviceId = device.deviceId;
-          break;
-        }
-      }
+      // Get camera access
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' } // Use back camera
+      });
 
-      console.log('Using camera:', videoInputDevices.find(d => d.deviceId === selectedDeviceId)?.label);
+      streamRef.current = stream;
 
-      // Start decoding from video device
       if (videoRef.current) {
-        await codeReader.decodeFromVideoDevice(
-          selectedDeviceId,
-          videoRef.current,
-          async (result, error) => {
-            if (result) {
-              const barcode = result.getText();
+        videoRef.current.srcObject = stream;
+      }
+
+      // Create barcode detector
+      const barcodeDetector = new window.BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
+      });
+
+      // Start scanning loop
+      scanIntervalRef.current = setInterval(async () => {
+        if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+          try {
+            const barcodes = await barcodeDetector.detect(videoRef.current);
+            
+            if (barcodes.length > 0) {
+              const barcode = barcodes[0].rawValue;
               console.log('✅ Barcode detected:', barcode);
 
-              // Stop scanning while we fetch product data
+              // Stop scanning
               stopScanning();
 
-              // Fetch product data from Open Food Facts
+              // Fetch product data
               await fetchProductData(barcode);
             }
-            
-            if (error) {
-              // Don't log "not found" errors - they're normal while scanning
-              if (error.name !== 'NotFoundException') {
-                console.error('Scanner error:', error);
-              }
-            }
+          } catch (error) {
+            console.error('Detection error:', error);
           }
-        );
-      }
+        }
+      }, 100); // Check every 100ms
+
     } catch (error: any) {
       console.error('Camera error:', error);
       toast.error(error.message || 'Failed to access camera');
@@ -98,9 +92,18 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
   };
 
   const stopScanning = () => {
-    if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
+    // Stop scanning interval
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
+
+    // Stop camera stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
     setIsScanning(false);
   };
 
@@ -121,7 +124,6 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
       if (data.status === 1 && data.product) {
         const product = data.product;
 
-        // Extract relevant product information
         const productData: Partial<Product> = {
           name: product.product_name || 'Unknown Product',
           brand: product.brands || undefined,
@@ -134,8 +136,7 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
         toast.success(`Product found: ${productData.name}`);
         onProductScanned(productData);
       } else {
-        // Product not found in database
-        toast.error('Product not found in database - please add manually');
+        toast.error('Product not found - please add manually');
         onProductScanned({
           barcode: barcode,
           name: '',
@@ -146,7 +147,6 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
       console.error('Product fetch error:', error);
       toast.error('Failed to fetch product data');
 
-      // Still pass the barcode for manual entry
       onProductScanned({
         barcode: barcode,
         name: '',
@@ -184,13 +184,11 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
       return 'Coffee & Tea';
     }
 
-    // Default fallback
     return 'Pantry & Sauces';
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
-      {/* Header */}
       <div className="bg-black text-white p-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Scan Barcode</h2>
         <button
@@ -201,7 +199,6 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
         </button>
       </div>
 
-      {/* Video Feed */}
       <div className="flex-1 relative flex items-center justify-center bg-black">
         <video
           ref={videoRef}
@@ -211,7 +208,6 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
           muted
         />
 
-        {/* Scanning overlay */}
         {isScanning && !isFetching && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="border-4 border-orange-500 w-72 h-40 rounded-lg shadow-lg">
@@ -220,7 +216,6 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
           </div>
         )}
 
-        {/* Loading indicator */}
         {isFetching && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-4">
@@ -231,7 +226,6 @@ export default function BarcodeScanner({ onProductScanned, onClose }: BarcodeSca
         )}
       </div>
 
-      {/* Instructions */}
       <div className="bg-black text-white p-4 text-center">
         <p className="text-sm text-gray-300">
           {isScanning 
