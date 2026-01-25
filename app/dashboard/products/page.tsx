@@ -244,11 +244,11 @@ export default function ProductsPage() {
                     <img
                       src={product.image_url}
                       alt={product.name}
-                      className="w-20 h-20 object-cover rounded"
+                      className="w-24 h-24 object-contain rounded bg-white"
                     />
                   ) : (
                     <div className="w-20 h-20 bg-surface rounded flex items-center justify-center text-gray-400">
-                      📦
+                     w-24 h-24
                     </div>
                   )}
                   
@@ -258,6 +258,7 @@ export default function ProductsPage() {
                       <p className="text-sm text-gray-600">{product.brand}</p>
                     )}
                     <p className="text-xs text-gray-500 mt-1">{product.category}</p>
+                    <p className="text-xs text-gray-600 font-medium mt-1">📦 {product.default_unit}</p>
                     
                     {product.latest_price && (
                       <div className="mt-2">
