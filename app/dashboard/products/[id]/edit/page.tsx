@@ -192,8 +192,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       {showScanner && (
         <div className="mb-6">
           <BarcodeScanner
-            onScanSuccess={handleBarcodeScan}
-            onClose={() => setShowScanner(false)}
+            onDetected={handleBarcodeScan}
+            onCancel={() => setShowScanner(false)}
           />
         </div>
       )}
