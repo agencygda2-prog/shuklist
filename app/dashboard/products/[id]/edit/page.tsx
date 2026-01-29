@@ -192,8 +192,17 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       {showScanner && (
         <div className="mb-6">
           <BarcodeScanner
-            onDetected={handleBarcodeScan}
-            onCancel={() => setShowScanner(false)}
+            
+           onProductScanned={(productData) => {
+              if (productData.barcode) setBarcode(productData.barcode);
+              if (productData.name) setName(productData.name);
+              if (productData.brand) setBrand(productData.brand);
+              if (productData.category) setCategory(productData.category);
+              if (productData.default_unit) setUnit(productData.default_unit);
+              if (productData.image_url) setImageUrl(productData.image_url);
+              setShowScanner(false);
+            }}
+            onClose={() => setShowScanner(false)} 
           />
         </div>
       )}
