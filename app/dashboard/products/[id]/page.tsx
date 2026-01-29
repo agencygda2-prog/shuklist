@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { ArrowLeft, Edit2, Plus, Store, Trash2, Tag, Calendar, X } from 'lucide-react';
 
@@ -410,6 +411,13 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
+              <Link
+                href={`/dashboard/products/${productId}/edit`}
+                className="px-4 py-2 bg-orange-600 text-white hover:bg-orange-700 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit Product
+              </Link>
               <button
                 onClick={handleDeleteProduct}
                 className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
