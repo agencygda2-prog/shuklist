@@ -63,51 +63,6 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     }
   }
 
-  // Handle barcode scan
-  async function handleBarcodeScan(scannedCode: string) {
-    setBarcode(scannedCode);
-    setShowScanner(false);
-    
-    // Fetch from Open Food Facts
-    try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${scannedCode}.json`);
-      const data = await response.json();
-
-      if (data.status === 1 && data.product) {
-        const p = data.product;
-        
-        // Auto-fill form with Open Food Facts data
-        if (p.product_name) setName(p.product_name);
-        if (p.brands) setBrand(p.brands);
-        if (p.categories) {
-          const cats = p.categories.split(',');
-          if (cats.length > 0) setCategory(cats[0].trim());
-        }
-        
-        // Get unit/quantity
-        if (p.quantity) {
-          setUnit(p.quantity);
-        } else if (p.product_quantity && p.product_quantity_unit) {
-          setUnit(`${p.product_quantity}${p.product_quantity_unit}`);
-        }
-
-        // Get image
-        if (p.image_url) {
-          setImageUrl(p.image_url);
-        } else if (p.image_front_url) {
-          setImageUrl(p.image_front_url);
-        }
-
-        alert('Product data loaded from Open Food Facts!');
-      } else {
-        alert('Product not found in Open Food Facts database. Please enter details manually.');
-      }
-    } catch (err) {
-      console.error('Error fetching from Open Food Facts:', err);
-      alert('Failed to fetch product data. Please enter details manually.');
-    }
-  }
-
   // Save product
   async function handleSave() {
     if (!name.trim()) {
@@ -119,7 +74,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     setError(null);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .update({
           name: name.trim(),
@@ -127,15 +82,20 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           category: category.trim() || null,
           barcode: barcode.trim() || null,
           default_unit: unit.trim() || null,
-          alert('Product updated successfully!');
-router.refresh();
-router.push(`/dashboard/products/${params.id}`);
-        
-        .eq('id', params.id);
+          image_url: imageUrl.trim() || null,
+        })
+        .eq('id', params.id)
+        .select();
 
-      if (error) throw error;
+      console.log('Update result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       alert('Product updated successfully!');
+      router.refresh();
       router.push(`/dashboard/products/${params.id}`);
     } catch (err: any) {
       console.error('Error saving product:', err);
@@ -194,8 +154,7 @@ router.push(`/dashboard/products/${params.id}`);
       {showScanner && (
         <div className="mb-6">
           <BarcodeScanner
-            
-           onProductScanned={(productData) => {
+            onProductScanned={(productData) => {
               if (productData.barcode) setBarcode(productData.barcode);
               if (productData.name) setName(productData.name);
               if (productData.brand) setBrand(productData.brand);
@@ -204,7 +163,7 @@ router.push(`/dashboard/products/${params.id}`);
               if (productData.image_url) setImageUrl(productData.image_url);
               setShowScanner(false);
             }}
-            onClose={() => setShowScanner(false)} 
+            onClose={() => setShowScanner(false)}
           />
         </div>
       )}
