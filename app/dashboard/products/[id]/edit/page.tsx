@@ -93,10 +93,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         console.error('Supabase error:', error);
         throw error;
       }
-
-      alert('Product updated successfully!');
-      router.refresh();
-      router.push(`/dashboard/products/${params.id}`);
+alert('Product updated successfully!');
+window.location.href = `/dashboard/products/${params.id}`;
+      
     } catch (err: any) {
       console.error('Error saving product:', err);
       setError(err.message || 'Failed to save product');
