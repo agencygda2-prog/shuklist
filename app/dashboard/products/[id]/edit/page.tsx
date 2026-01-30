@@ -127,8 +127,10 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           category: category.trim() || null,
           barcode: barcode.trim() || null,
           default_unit: unit.trim() || null,
-          image_url: imageUrl.trim() || null,
-        })
+          alert('Product updated successfully!');
+router.refresh();
+router.push(`/dashboard/products/${params.id}`);
+        
         .eq('id', params.id);
 
       if (error) throw error;
