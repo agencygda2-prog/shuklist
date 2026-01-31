@@ -229,39 +229,40 @@ export default function CameraCapture({ onImageCaptured, onClose }: CameraCaptur
       </div>
 
       {/* Controls */}
-      <div className="bg-gray-900 p-6">
+      <div className="bg-gray-900 p-4 pb-8 safe-area-bottom">
         {!capturedImage ? (
-          <div className="flex justify-center">
+        <div className="flex justify-center items-center" style={{ minHeight: '100px' }}>
             <button
               onClick={capturePhoto}
-              className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 hover:border-orange-500 transition-colors flex items-center justify-center"
+            className="w-16 h-16 bg-white rounded-full border-4 border-gray-300 hover:border-orange-500 transition-colors flex items-center justify-center shadow-lg"
+aria-label="Capture photo"
             >
-              <Camera className="w-8 h-8 text-gray-700" />
+            <Camera className="w-7 h-7 text-gray-700" />
             </button>
           </div>
         ) : (
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-3 justify-center flex-wrap">
             <button
               onClick={retakePhoto}
               disabled={uploading}
-              className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
-              <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-4 h-4" />
               Retake
             </button>
             <button
               onClick={uploadImage}
               disabled={uploading}
-              className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {uploading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Uploading...
                 </>
               ) : (
                 <>
-                  <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4" />
                   Use Photo
                 </>
               )}
