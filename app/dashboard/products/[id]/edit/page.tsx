@@ -220,7 +220,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
               Product Image
             </label>
             <div className="space-y-2">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="url"
                   value={imageUrl}
@@ -230,7 +230,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 />
                 <button
                   onClick={() => setShowCamera(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Camera className="w-5 h-5" />
                   Take Photo
