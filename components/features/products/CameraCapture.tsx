@@ -229,7 +229,7 @@ export default function CameraCapture({ onImageCaptured, onClose }: CameraCaptur
       </div>
 
       {/* Controls */}
-      <div className="bg-gray-900 p-4 pb-8 safe-area-bottom">
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 p-4 pb-8 z-50" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
         {!capturedImage ? (
         <div className="flex justify-center items-center" style={{ minHeight: '100px' }}>
             <button
