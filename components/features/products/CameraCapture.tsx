@@ -208,7 +208,7 @@ export default function CameraCapture({ onImageCaptured, onClose }: CameraCaptur
       )}
 
       {/* Camera View or Preview */}
-      <div className="flex-1 relative bg-black flex items-center justify-center">
+      <div className="absolute top-16 bottom-32 left-0 right-0 bg-black flex items-center justify-center">
         {!capturedImage ? (
           <>
             <video
