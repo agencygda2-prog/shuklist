@@ -304,6 +304,29 @@ export default function ProductDetailPage() {
 
       if (pricesError) throw pricesError;
 
+      
+// Delete shopping list items (due to foreign key constraint)
+    const { error: listItemsError } = await supabase
+      .from('shopping_list_items')
+      .delete()
+      .eq('product_id', productId);
+
+    if (listItemsError) throw listItemsError;
+```
+
+So it should look like:
+```
+305:    if (pricesError) throw pricesError;
+306:
+307:    // Delete shopping list items (due to foreign key constraint)
+308:    const { error: listItemsError } = await supabase
+309:      .from('shopping_list_items')
+310:      .delete()
+311:      .eq('product_id', productId);
+312:
+313:    if (listItemsError) throw listItemsError;
+314:
+315:    // Delete product
       // Delete product
       const { error: productError } = await supabase
         .from('products')
