@@ -326,7 +326,8 @@ export default function ListDetailPage() {
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.brand?.toLowerCase().includes(searchTerm.toLowerCase())
+    p.brand?.toLowerCase().includes(searchTerm.toLowerCase() ||
+    p.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
