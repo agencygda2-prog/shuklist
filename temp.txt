@@ -327,7 +327,6 @@ export default function ProductDetailPage() {
       alert('Failed to delete product. Please try again.');
     }
   };
-
   const isPromotionActive = (price: PriceData) => {
     if (!price.is_promotion || !price.promotion_start || !price.promotion_end) {
       return false;
