@@ -304,29 +304,14 @@ export default function ProductDetailPage() {
 
       if (pricesError) throw pricesError;
 
-      
-// Delete shopping list items (due to foreign key constraint)
-    const { error: listItemsError } = await supabase
-      .from('shopping_list_items')
-      .delete()
-      .eq('product_id', productId);
+      // Delete shopping list items (due to foreign key constraint)
+      const { error: listItemsError } = await supabase
+        .from('shopping_list_items')
+        .delete()
+        .eq('product_id', productId);
 
-    if (listItemsError) throw listItemsError;
-```
+      if (listItemsError) throw listItemsError;
 
-So it should look like:
-```
-305:    if (pricesError) throw pricesError;
-306:
-307:    // Delete shopping list items (due to foreign key constraint)
-308:    const { error: listItemsError } = await supabase
-309:      .from('shopping_list_items')
-310:      .delete()
-311:      .eq('product_id', productId);
-312:
-313:    if (listItemsError) throw listItemsError;
-314:
-315:    // Delete product
       // Delete product
       const { error: productError } = await supabase
         .from('products')
@@ -434,20 +419,22 @@ So it should look like:
                   )}
                 </div>
               </div>
-              <Link
-                href={`/dashboard/products/${productId}/edit`}
-                className="px-4 py-2 bg-orange-600 text-white hover:bg-orange-700 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit Product
-              </Link>
-              <button
-                onClick={handleDeleteProduct}
-                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Product
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/dashboard/products/${productId}/edit`}
+                  className="px-4 py-2 bg-orange-600 text-white hover:bg-orange-700 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit Product
+                </Link>
+                <button
+                  onClick={handleDeleteProduct}
+                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Product
+                </button>
+              </div>
             </div>
           </div>
         </div>
