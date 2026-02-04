@@ -60,6 +60,7 @@ export default function ListDetailPage() {
   // Add product modal state
   const [products, setProducts] = useState<ProductWithPrice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
@@ -277,6 +278,7 @@ export default function ListDetailPage() {
       setSelectedProduct(null);
       setQuantity(1);
       setSearchTerm('');
+      setSelectedCategory('All');
     } catch (error) {
       console.error('Error adding product:', error);
       alert('Failed to add product. Please try again.');
@@ -324,11 +326,31 @@ export default function ListDetailPage() {
     }
   };
 
-  const filteredProducts = products.filter(p =>
-  p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  p.category?.toLowerCase().includes(searchTerm.toLowerCase())
-);
+  // Extract unique categories from products
+  const categories = ['All', ...new Set(
+    products
+      .map(p => p.category)
+      .filter((cat): cat is string => cat !== null && cat !== undefined)
+      .sort()
+  )];
+
+  // Filter products by category AND search term
+  const filteredProducts = products.filter(product => {
+    // Filter by category first
+    if (selectedCategory !== 'All' && product.category !== selectedCategory) {
+      return false;
+    }
+    
+    // Then filter by search
+    if (!searchTerm.trim()) return true;
+    
+    const search = searchTerm.toLowerCase();
+    const matchesName = product.name.toLowerCase().includes(search);
+    const matchesBrand = product.brand?.toLowerCase().includes(search);
+    const matchesCategory = product.category?.toLowerCase().includes(search);
+    
+    return matchesName || matchesBrand || matchesCategory;
+  });
 
   if (loading) {
     return (
@@ -526,6 +548,7 @@ export default function ListDetailPage() {
                   setShowAddProduct(false);
                   setSelectedProduct(null);
                   setSearchTerm('');
+                  setSelectedCategory('All');
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg"
               >
@@ -534,7 +557,7 @@ export default function ListDetailPage() {
             </div>
 
             <div className="p-4 border-b">
-              <div className="relative">
+              <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
@@ -545,13 +568,32 @@ export default function ListDetailPage() {
                   autoFocus
                 />
               </div>
+
+              {/* Category Filter Chips */}
+              <div className="-mx-4 px-4 overflow-x-auto">
+                <div className="flex gap-2 min-w-max pb-2">
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                        selectedCategory === category
+                          ? 'bg-[#CC785C] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
               {filteredProducts.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500">
-                    {searchTerm ? 'No products found' : 'No products available. Add products first!'}
+                    {searchTerm || selectedCategory !== 'All' ? 'No products found' : 'No products available. Add products first!'}
                   </p>
                 </div>
               ) : (
