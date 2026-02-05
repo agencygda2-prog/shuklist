@@ -326,13 +326,7 @@ export default function ListDetailPage() {
     }
   };
 
-  // Extract unique categories from products
-  const categories = ['All', ...new Set(
-    products
-      .map(p => p.category)
-      .filter((cat): cat is string => cat !== null && cat !== undefined)
-      .sort()
-  )];
+  
 
   // Filter products by category AND search term
   const filteredProducts = products.filter(product => {
@@ -572,7 +566,11 @@ export default function ListDetailPage() {
               {/* Category Filter Chips */}
               <div className="-mx-4 px-4 overflow-x-auto">
                 <div className="flex gap-2 min-w-max pb-2">
-                  {categories.map(category => (
+                  {['All', ...Array.from(new Set(
+                    products
+                      .map(p => p.category)
+                      .filter((cat): cat is string => cat !== null && cat !== undefined)
+                  ))].sort().map(category => (
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
